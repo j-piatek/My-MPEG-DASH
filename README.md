@@ -5,3 +5,9 @@ En esta práctica desarrollamos una aplicación web para proporcionar un servici
 
 El servidor responde al cliente con los segmentos de un vídeo de prueba codificado en 3 calidades diferentes.
 
+La práctica se divide en 4 partes.
+  - Introducción a dash.js, en la que se visualiza un vídeo ofrecido por envivo a través del documento de presentación, o Media Presentation Document (MPD). (index_parte1.html)
+  - Generación de vídeos para streaming y visualización en un cliente. (index_parte2.html)
+  - Gestión de DRM con dash.js. (index_parte3.html)
+  - Visualización de métricas (index_parte3.html)
+
