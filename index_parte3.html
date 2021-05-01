@@ -1,0 +1,159 @@
+<!<DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>IRAC - Práctica 3</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
+    <script src="dash.all.min.js"></script>
+  </head>
+
+<body>
+	<script>
+    	const protData = {
+		 	"org.w3.clearkey": {
+			"clearkeys": {
+			"oW5AK5BW43HzbTSKpiu3SQ": "hyN9IKGfWKdAwFaE5pm0qg"
+		  }
+      }
+		};
+    </script>
+
+    <div class="player">
+      <video class="dashjs-player" width="640" height="360" autoplay controls preload="auto"></video>
+    </div>
+
+    <div class="stats">
+	    <p>Video Bitrate: <span id="bitrate"></span></p>
+      <p>Video Buffer: <span id="buffer"></span></p>
+      <p>Video Representation: <span id="representation"></span></p>
+    </div>
+
+  <div>
+	<canvas id="myChart" width="600" height="360" style="border:5px solid #000000;">
+	Your browser does not support the HTML canvas tag
+	</canvas>
+	</div>
+
+  <script>
+
+    function actual_time() {
+        var d = new Date();
+        return d.getHours() + ":" + (d.getMinutes()<10?'0':'') + d.getMinutes() + "," + (d.getSeconds()<10?'0':'') + d.getSeconds();
+    }
+
+    console.log("La página se ha cargado a las " + actual_time());
+
+    var ctx = document.getElementById("myChart").getContext("2d");
+    var myChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: [actual_time()],
+        datasets: [
+          {
+          label: 'Bitrate',
+          yAxisID: 'A',
+          type: 'line',
+          borderColor: 'rgba(247, 89, 104, 1)',
+          backgroundColor: 'rgba(247, 89, 104, 1)',
+          data: [0],
+          fill: false
+        },
+        {
+          label: 'Buffer Level',
+          yAxisID: 'B',
+          type: 'bar',
+          borderColor: 'rgba(0, 109, 176, 1)',
+          backgroundColor: 'rgba(0, 109, 176, 0.6)',
+          data: [0],
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          yAxes: [
+          {
+            id: 'A',
+            type: 'linear',
+            position: 'left',
+            ticks: {
+              fontColor: 'rgba(247, 89, 104, 1)',
+              fontSize: 15
+            },
+            scaleLabel: {
+              labelString: 'Bitrate'
+            }
+          },
+          {
+            id: 'B',
+            type: 'linear',
+            position: 'right',
+            ticks: {
+              fontColor: 'rgba(0, 109, 176, 1)',
+              fontSize: 15
+            },
+            scaleLabel: {
+              labelString: 'Buffer Level'
+            }
+          }]
+        }
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        init();
+    });
+
+    function addData(chart, label,new_buffer , new_bitrate) {
+      chart.data.labels.push(label);
+      chart.data.datasets[1].data.push(new_buffer);
+      chart.data.datasets[0].data.push(new_bitrate);
+      chart.update();
+	 }
+
+      function init() {
+        var video,
+          player,
+          mpd_url = "./output_encrypted/stream.mpd";
+        video = document.querySelector("video");
+        player = dashjs.MediaPlayer().create();
+        player.setProtectionData(protData);
+        player.initialize(video, mpd_url, true);
+        player.on(dashjs.MediaPlayer.events["PLAYBACK_ENDED"], function () {
+          clearInterval(eventPoller);
+        });
+        var eventPoller = setInterval(function () {
+
+          var streamInfo = player.getActiveStream().getStreamInfo();
+          var dashMetrics = player.getDashMetrics();
+          var dashAdapter = player.getDashAdapter();
+          if (dashMetrics && streamInfo) {
+            const periodIdx = streamInfo.index;
+            var repSwitch = dashMetrics.getCurrentRepresentationSwitch(
+              "video",
+              true
+            );
+            var bufferLevel = dashMetrics.getCurrentBufferLevel("video", true);
+            var bitrate = repSwitch
+              ? Math.round(
+                  dashAdapter.getBandwidthForRepresentation(
+                    repSwitch.to,
+                    periodIdx
+                  ) / 1000
+                )
+              : NaN;
+
+            addData(myChart,actual_time(), bufferLevel, bitrate);
+
+            document.getElementById("buffer").innerText = bufferLevel + " seconds";
+            document.getElementById("bitrate").innerText = bitrate + " kbps";
+            document.getElementById("representation").innerText = repSwitch.to;
+          }
+        }, 1000);
+      }
+    </script>
+
+  </body>
+</html>
